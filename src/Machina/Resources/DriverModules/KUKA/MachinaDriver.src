@@ -1,0 +1,122 @@
+&ACCESS RVP
+&REL 1
+&PARAM DISKPATH = KRC:\R1\Program
+&PARAM SensorITMASK = *
+&PARAM TEMPLATE = C:\KRC\Roboter\Template\vorgabe
+DEF MachinaDriver( )
+;FOLD Declaration
+  DECL EKI_STATUS RET
+  DECL ACTION_TYPE Action
+  CHAR MsgText[80]
+  DECL KRLMSG_T Msg
+  DECL KRLMSGPAR_T MsgParams[3]
+  DECL KRLMSGOPT_T MsgOpts
+  INT nHandle
+
+;ENDFOLD (Declaration)
+
+;FOLD Communicated data
+  ;FOLD Receive from external program
+  ; <Machina>
+    ; <Action>
+      ;  <Identity Seq="2912" Code="1" />
+      ;	<Transform X="210.3" Y="825.3" Z="234.3" A="84.2" B="12.3" C="43.5" />
+    ; </Action>
+  ; </Machina>
+  ;ENDFOLD (Receive from external program)
+  ;FOLD Send to external program
+  ; <Robot>
+    ; <Ack Seq="2912" />
+  ; </Robot>
+  ;ENDFOLD (Send to external program)
+;ENDFOLD (Communicated data)
+
+;FOLD INI
+  ;FOLD BASISTECH INI
+  BAS (#INITMOV,0)
+  ;ENDFOLD (BASISTECH INI)
+  ;FOLD USER INI
+    ;Make your modifications here
+  ;ENDFOLD (USER INI)
+;ENDFOLD (INI)
+
+;FOLD (Main)
+  RET = EKI_Init(CHAN[])
+  RET = EKI_Open(CHAN[])
+  
+  ; Wait until server is connected (flags set by EKI per MachinaDriver XML config)
+  WAIT FOR $FLAG[1]
+
+  ; Set up KRC user notifications and signal connection
+  MsgOpts = { VL_STOP FALSE, CLEAR_P_RESET TRUE, CLEAR_P_SAW TRUE, LOG_TO_DB FALSE }
+  Msg = { MODUL[] "Machina", NR 1, MSG_TXT[] "Connected" }
+  nHandle = SET_KRLMSG(#notify, Msg, MsgParams[], MsgOpts)
+
+  LOOP
+    ; Hang until connection is interrupted or a complete transmission is received
+    WAIT FOR ($FLAG[1] == FALSE) OR ($FLAG[998] == TRUE)
+    
+    ; Exit if connection is dropped
+    IF $FLAG[1] == FALSE THEN
+      EXIT
+    ENDIF
+
+    ; Process any incoming data
+    RET = EKI_CheckBuffer(CHAN[], "Machina/Action/Identity/@Seq")
+    IF RET.Connected AND (RET.Buff > 0) THEN
+      MsgText[] = "No action"
+
+      ; Retrieve buffered data
+      Action = GET_DATA()
+
+      ; Process received data
+      SWITCH Action.Code
+      CASE INST_LIN
+        ; Call translation function with transform as parameter
+        MsgText[] = "Received Translation action."
+      CASE INST_PTP
+        ; Call joint rotation function with transform as parameter
+        MsgText[] = "Received Joint Rotation action."
+      ENDSWITCH
+
+      Msg = { MODUL[] "Machina", NR 2 }
+      Msg.MSG_TXT[] = MsgText[]
+      nHandle = SET_KRLMSG(#notify, Msg, MsgParams[], MsgOpts)
+
+      ; Write int to <Ack Id="2912" /> and send
+      RET = EKI_SetInt(CHAN[],"Robot/Ack/@Seq", Action.Seq)
+      RET = EKI_Send(CHAN[],"Robot")
+
+      ; Reset reception flag
+      $FLAG[998] = FALSE
+    ENDIF
+  ENDLOOP
+
+  RET = EKI_Close(CHAN[])
+  RET = EKI_Clear(CHAN[])
+;ENDFOLD (Main)
+END
+
+DEFFCT ACTION_TYPE GET_DATA()
+;FOLD Declaration
+  DECL EKI_STATUS RET
+  DECL ACTION_TYPE Action
+  Action = { Seq 0, Code 0, Transform { X 0, Y 0, Z 0, A 0, B 0, C 0 }}
+;ENDFOLD (Declaration)
+
+;FOLD Get received action data
+  ; Get int values in <Identity Seq="2912" Code="1" />
+  RET=EKI_GetInt(CHAN[], "Machina/Action/Identity/@Seq", Action.Seq)
+  RET=EKI_GetInt(CHAN[], "Machina/Action/Identity/@Code", Action.Code)
+
+  ; Translation Action
+  SWITCH Action.Code
+  CASE INST_LIN ;All actions requiring a frame
+	  ; Get frame in <Transform X="210.3" Y="825.3" Z="234.3" A="84.2" B="12.3" C="43.5" />
+	  RET=EKI_GetFrame(CHAN[], "Machina/Action/Transform", Action.Transform)
+
+  ENDSWITCH
+
+  RETURN Action
+;ENDFOLD (Get received action data)
+ENDFCT

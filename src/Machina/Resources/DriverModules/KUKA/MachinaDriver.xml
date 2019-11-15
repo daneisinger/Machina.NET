@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ETHERNETKRL>
+  <CONFIGURATION>
+    <EXTERNAL>
+      <TYPE>Client</TYPE>
+    </EXTERNAL>
+    <INTERNAL>
+      <ENVIRONMENT>Program</ENVIRONMENT>
+      <BUFFERING Mode="FIFO" Limit="16" />
+      <BUFFSIZE Limit="65534" />
+      <TIMEOUT Connect="65000" />
+      <IP>172.31.1.147</IP>
+      <PORT>54600</PORT>
+      <PROTOCOL>TCP</PROTOCOL>
+      <ALIVE Set_Flag="1" />
+      <MESSAGES Logging="warning" Display="error" />
+    </INTERNAL>
+  </CONFIGURATION>
+  <RECEIVE>
+    <XML>
+      <ELEMENT Tag="Machina/Action/Identity/@Seq" Type="INT" />
+      <ELEMENT Tag="Machina/Action/Identity/@Code" Type="INT" />
+      <ELEMENT Tag="Machina/Action/Transform" Type="FRAME" />
+      <ELEMENT Tag="Machina" Set_Flag="998" />
+    </XML>
+  </RECEIVE>
+  <SEND>
+    <XML>
+      <ELEMENT Tag="Robot/Ack/@Seq" />
+    </XML>
+  </SEND>
+</ETHERNETKRL>

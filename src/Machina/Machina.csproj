@@ -184,7 +184,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Resources\DriverModules\ABB\machina_abb_empty.pgf" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="Resources\DriverModules\KUKA\MachinaDriver.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\DriverModules\KUKA\MachinaDriver.src" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>REM JL: for the time being, only copy ddlls manually to avoid breaking the dependent projects

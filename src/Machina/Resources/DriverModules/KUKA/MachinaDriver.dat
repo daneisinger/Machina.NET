@@ -1,0 +1,16 @@
+DEFDAT MachinaDriver
+;FOLD (General)
+  CHAR CHAN[15]
+  CHAN[] = "MachinaDriver"
+  STRUC ACTION_TYPE INT Seq, INT Code, FRAME Transform, E6AXIS Axes, E6POS Pose
+;ENDFOLD (General)
+
+;FOLD (Data Paths)
+
+;ENDFOLD
+
+;FOLD (Action Codes)
+  CONST INT INST_LIN = 1
+  CONST INT INST_PTP = 2
+;ENDFOLD (Action Codes)
+ENDDAT
